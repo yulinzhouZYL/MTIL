@@ -1,12 +1,10 @@
-# MTIL
-Official implementation for the paper 'MTIL: Encoding Full History with Mamba for Temporal Imitation Learning
 # MTIL: Encoding Full History with Mamba for Temporal Imitation Learning
 
 This repository contains the official implementation for the paper:
 
-** MTIL: Encoding Full History with Mamba for Temporal Imitation Learning]** [YulinZhou]  
+MTIL: Encoding Full History with Mamba for Temporal Imitation Learning [YulinZhou]  
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) *(Optional: Replace MIT with your chosen license)*
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Core Idea and Principle
 
@@ -61,15 +59,13 @@ We recommend using Conda for environment management.
 
 ## Usage
 
-*coming soon*
 
-**Training:**
+1.**Training and Evaluation:**
 
 ```bash
 # Example command for training on an ACT task
 python train_mtil.py --task [task_name] --dataset_dir [path_to_dataset] ...
 
-**Evaluation:**
 
 # Example command for evaluating a trained policy
 python evaluate_mtil.py --policy_path [path_to_checkpoint] --task [task_name] ...
