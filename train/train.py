@@ -396,14 +396,14 @@ def main():
 
     # 2) 构造 Dataset
     train_dataset = MambaSequenceDataset(
-        root_dir="/home/sutai/Desktop/data/data100",  # put your own data path here
+        root_dir="data100",  # put your own data path here
         mode="train",
         resize_hw=(640, 480),
         use_pose10d=True,
         selected_cameras=config.camera_names
     )
     val_dataset = MambaSequenceDataset(
-        root_dir="/home/sutai/Desktop/data/data100",
+        root_dir="data100",
         mode="test",
         resize_hw=(640, 480),
         use_pose10d=True,
