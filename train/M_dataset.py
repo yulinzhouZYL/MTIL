@@ -1,4 +1,3 @@
-# tacmi_train4/dataset/tacmi_M_dataset16.py
 import os
 import cv2
 import numpy as np
