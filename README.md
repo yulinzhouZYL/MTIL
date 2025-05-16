@@ -2,7 +2,7 @@
 
 This repository contains the official implementation for the paper:
 
-MTIL: Encoding Full History with Mamba for Temporal Imitation Learning （**Submitted to CoRL 2025**）
+MTIL: Encoding Full History with Mamba for Temporal Imitation Learning
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
