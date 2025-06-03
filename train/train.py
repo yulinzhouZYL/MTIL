@@ -155,8 +155,6 @@ class LitMambaModel(pl.LightningModule):
             # 初始化新的轨迹隐状态
             self.hiddens = self.policy.init_hidden_states(batch_size=1, device=self.device)
             self.prev_traj_idx = traj_idx  # 更新轨迹索引
-            # 生成新轨迹的增强参数
-            self.current_augment_params = self.generate_random_augment_params()
 
         elif self.prev_traj_idx == -1:
             # 第一个轨迹，初始化隐藏状态
