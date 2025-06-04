@@ -5,8 +5,8 @@ import torch.nn as nn
 import numpy as np
 
 
-from scaler_M import Scaler
-from mamba_policy import MambaPolicy, MambaConfig
+from train.scaler_M import Scaler
+from train.mamba_policy import MambaPolicy, MambaConfig
 
 
 class MyInferenceModel(nn.Module):
