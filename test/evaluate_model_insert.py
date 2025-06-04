@@ -6,9 +6,9 @@ import torch
 from einops import rearrange
 from sim_env import make_sim_env, BOX_POSE
 from visualize_episodes import save_videos
-from mamba_policy import MambaPolicy, MambaConfig
-from scaler_M import Scaler
-from M_dataset import MambaSequenceDataset
+from train.mamba_policy import MambaPolicy, MambaConfig
+from train.scaler_M import Scaler
+from train.M_dataset import MambaSequenceDataset
 from torch.utils.data import DataLoader
 import time
 from tqdm import tqdm
