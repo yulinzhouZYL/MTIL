@@ -5,7 +5,7 @@
 
 This repository contains the official implementation for the MTIL paper: [https://arxiv.org/abs/2505.12410](https://arxiv.org/abs/2505.12410)
 
- **This paper has been submitted to IEEE Robotics and Automation Letters(RA-L).**
+ **This paper has been accepted by IEEE Robotics and Automation Letters(RA-L).**
 
 ## Core Idea and Principle
 
