@@ -3,9 +3,10 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2505.12410-b31b1b.svg)](https://arxiv.org/abs/2505.12410)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains the official implementation for the MTIL paper: [https://arxiv.org/abs/2505.12410](https://arxiv.org/abs/2505.12410)
+This is the official implementation of our paper, which has been accepted for publication in the **IEEE Robotics and Automation Letters (RA-L)**.
 
- **This paper has been accepted by IEEE Robotics and Automation Letters(RA-L).**
+- **[arXiv Preprint]**: [https://arxiv.org/abs/2505.12410](https://arxiv.org/abs/2505.12410)
+- **[IEEE Xplore Publication]**: [https://ieeexplore.ieee.org/document/11184145](https://ieeexplore.ieee.org/document/11184145)
 
 ## Core Idea and Principle
 
