@@ -100,11 +100,13 @@ Follow these steps to prepare the data, train, and evaluate the MTIL model:
 If you find this work useful in your research, please consider citing our paper:
 
 ```bibtex
-@misc{zhou2025mtil,
-      title={MTIL: Encoding Full History with Mamba for Temporal Imitation Learning}, 
-      author={Yulin Zhou and Yuankai Lin and Fanzhe Peng and Jiahui Chen and Kaiji Huang and Hua Yang and Zhouping Yin},
-      year={2025},
-      eprint={2505.12410},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO}
+@article{Zhou2025MTIL,
+  author={Zhou, Yulin and Lin, Yuankai and Peng, Fanzhe and Chen, Jiahui and Huang, Kaiji and Yang, Hua and Yin, Zhouping},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={MTIL: Encoding Full History with Mamba for Temporal Imitation Learning}, 
+  year={2025},
+  volume={10},
+  number={11},
+  pages={11761-11767},
+  doi={10.1109/LRA.2025.3615520}
 }
