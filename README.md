@@ -52,11 +52,37 @@ We recommend using Conda for environment management.
     # pip install mamba-ssm causal-conv1d
     ```
     *(Note: `mamba-ssm` installation can sometimes be tricky, especially the CUDA compiled components. Refer to the [official mamba-ssm repository](https://github.com/state-spaces/mamba) if you encounter compilation issues. Ensure you have a compatible C++ compiler and CUDA toolkit installed if using GPU support.)*
-
     Finally, install other dependencies:
     ```bash
     pip install pyquaternion pyyaml rospkg pexpect opencv-python matplotlib einops packaging h5py ipython pytorch-lightning mujoco==2.3.7 dm_control==1.0.14
     ```
+3.  **DINOv2 (Python 3.9) Compatibility Fix:**
+
+    This project is built using Python 3.9 and PyTorch 2.4.0 (cu124).
+    
+    ### ‼️ Important: 
+    
+    The DINOv2 repository, when loaded via `torch.hub.load`, defaults to the `main` branch which now uses **Python 3.10+** syntax (e.g., `float | None`). This will cause a `TypeError` in Python 3.9 environments.
+    
+    To fix this, we must patch the DINOv2 source code downloaded by `torch.hub`.
+    
+    **Instructions:**
+    
+    1.  Run the training script once (`python train.py`). It will fail, but this is necessary to download the DINOv2 source code to your torch cache (usually `$HOME/.cache/torch/hub/facebookresearch_dinov2_main`).
+    
+    2.  Run the following command to replace the incompatible Python 3.10 syntax with Python 3.9 compatible syntax:
+    
+        ```bash
+        find $HOME/.cache/torch/hub/facebookresearch_dinov2_main -type f -name "*.py" -exec sed -i -e 's/float | None/Optional[float]/g' -e 's/int | None/Optional[int]/g' -e 's/str | None/Optional[str]/g' -e 's/bool | None/Optional[bool]/g' -e 's/list | None/Optional[list]/g' -e 's/tuple | None/Optional[tuple]/g' -e 's/Callable | None/Optional[Callable]/g' {} +
+        ```
+    
+    3.  Run this second command to add the required `from typing import ...` statements to the files you just modified. This resolves the `NameError: name 'Optional' is not defined`.
+    
+        ```bash
+        find $HOME/.cache/torch/hub/facebookresearch_dinov2_main -type f -name "*.py" -exec grep -l "Optional" {} + | xargs -r sed -i '1i from typing import Optional, Callable, List, Tuple, Any'
+        ```
+    
+    After running these two commands, you can re-run the training script, and DINOv2 will load correctly.
 
 ## Usage
 
