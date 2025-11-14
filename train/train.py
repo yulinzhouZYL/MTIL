@@ -28,25 +28,15 @@ class LitMambaModel(pl.LightningModule):
         print("Starting training...")
         self.policy = MambaPolicy(
             camera_names = config.camera_names,
-            backbone = config.backbone,
-            pretrained_backbone = config.pretrained_backbone,
-            freeze_backbone = config.freeze_backbone,
             embed_dim = config.embed_dim,
-            lowdim_dim = 14,
+            lowdim_dim = config.lowdim,
             d_model = config.d_model,
-            action_dim = 14,   # pose_act(12) + gripper_act(2) = 14
+            action_dim = config.action_dim,   # pose_act(12) + gripper_act(2) = 14
             sum_camera_feats = config.sum_camera_feats,
             num_blocks = config.num_blocks,
             future_steps=future_steps,
             img_size = config.img_size,
-            mamba_cfg = {
-                'd_state': config.d_state,
-                'd_conv': config.d_conv,
-                'expand': config.expand,
-                'headdim': config.headdim,
-                'activation': config.activation,
-                'use_mem_eff_path': config.use_mem_eff_path,
-            }
+            mamba_cfg = config
         )
 
         print("Model initialized.")
@@ -456,9 +446,9 @@ def main():
 
     # 5) 构造LightningModule
     lit_model = LitMambaModel(config, scaler=scaler)
-    checkpoint_path = ('last.ckpt')  # put your own ckpt path here
-    checkpoint = torch.load(checkpoint_path)
-    lit_model.load_state_dict(checkpoint['state_dict'], strict=True)
+    # checkpoint_path = ('last.ckpt')  # put your own ckpt path here
+    # checkpoint = torch.load(checkpoint_path)
+    # lit_model.load_state_dict(checkpoint['state_dict'], strict=True)
 
     # 6) trainer
     from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
