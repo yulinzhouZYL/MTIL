@@ -17,7 +17,7 @@ class MyInferenceModel(nn.Module):
       - load_checkpoint
       - predict / denormalize
     """
-    def __init__(self, checkpoint_path: str, config: MambaConfig, lowdim_dict: dict):
+    def __init__(self, checkpoint_path: str, scaler_path: str, config: MambaConfig, lowdim_dict: dict):
         """
         :param checkpoint_path: 已训练好的 ckpt 路径
         :param config: 与训练时相同的 MambaConfig
@@ -28,13 +28,10 @@ class MyInferenceModel(nn.Module):
 
         self.policy = MambaPolicy(
             camera_names=config.camera_names,
-            backbone=config.backbone,
-            pretrained_backbone=config.pretrained_backbone,
-            freeze_backbone=config.freeze_backbone,
             embed_dim=config.embed_dim,
-            lowdim_dim=14,
+            lowdim_dim=config.lowdim_dim,
             d_model=config.d_model,
-            action_dim=14,
+            action_dim=config.action_dim,
             sum_camera_feats=config.sum_camera_feats,
             num_blocks=config.num_blocks,
             mamba_cfg={
@@ -49,7 +46,7 @@ class MyInferenceModel(nn.Module):
         print("[MyInferenceModel]  Policy created.")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.scaler = Scaler(lowdim_dict=lowdim_dict)
-        self.scaler.load('scaler_params.pth')
+        self.scaler.load(scaler_pth)
         self.policy.to(self.device)
         print(f"[MyInferenceModel] Loading checkpoint from {checkpoint_path}")
         ckpt = torch.load(checkpoint_path, map_location='cuda:0')
@@ -115,3 +112,4 @@ class MyInferenceModel(nn.Module):
             arm2_denorm['gripper_act2']
         ], dim=2)
         return out
+
