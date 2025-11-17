@@ -114,6 +114,7 @@ DT = 0.02
 camera_names = ['top']
 infer_model = MyInferenceModel(
         checkpoint_path=checkpoint,
+        scaler_path=scaler_path
         lowdim_dict=lowdim_dict,
         config=config
     ).to('cuda' if torch.cuda.is_available() else 'cpu')
