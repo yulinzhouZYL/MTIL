@@ -21,6 +21,8 @@ This codebase provides the implementation for the MTIL agent. Currently, it incl
 
 * Training MTIL policies on tasks from the **ACT dataset (ALOHA simulated tasks)**.
 * Running inference (evaluation) with trained MTIL policies on the ACT dataset tasks.
+* **[NEW] Parallelization Support:** All files with the `_par` suffix (e.g., `M_dataset_par.py`, `mamba_policy_par.py`, `train_par.py`, `inference_par.py`, including those in the `/test/` folder) are newly added to support parallel processing. This significantly accelerates data loading, training, and inference.
+* **[NEW] Offline Feature Extraction:** We added `extract_dinov2_features.py` to allow users to optionally extract DINOv2 features offline before training, facilitating further acceleration in the training pipeline.
 * **Note:** Code for real-world experiments will be cleaned up and released in a future update.
 
 ## Installation
