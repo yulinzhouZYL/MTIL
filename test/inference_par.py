@@ -102,7 +102,7 @@ class MyInferenceModel(nn.Module):
             # policy.step 会自动调用 backbone -> adapter -> mamba
             # 确保 lowdim 在正确的 device
             lowdim = lowdim.to(self.device)
-            pred_action, self.hiddens = self.policy.step(lowdim, rgb_tensor_dict, self.hiddens, sample_steps=3)
+            pred_action, self.hiddens = self.policy.step(lowdim, rgb_tensor_dict, self.hiddens)
 
         return pred_action
 
