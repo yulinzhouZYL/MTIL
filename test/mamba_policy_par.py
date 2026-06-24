@@ -680,7 +680,7 @@ class MambaPolicy(nn.Module):
         k = lowdim_t.unsqueeze(0)
         x_t = self.cross_attn(query=q, key=k, value=k).squeeze(0) # [B, d_model]
 
-        # 4. Mamba Step (关键修正)
+        # 4. Mamba Step 
         new_states = []
         
         # 逻辑说明：
@@ -695,9 +695,6 @@ class MambaPolicy(nn.Module):
 
         for i, blk in enumerate(self.blocks):
             conv_st, ssm_st = hidden_states[i]
-            
-            # --- 关键修正点 1: 残差累加 ---
-            # 只有在这里加一次！之前代码在层尾又加了一次，导致双倍爆炸。
             if current_residual is None:
                 current_residual = current_hidden
             else:
@@ -717,25 +714,15 @@ class MambaPolicy(nn.Module):
                 new_conv_st, new_ssm_st = conv_st, ssm_st
             
             new_states.append((new_conv_st, new_ssm_st))
-
-            # --- 关键修正点 2: 输出传递 ---
             # Mamba Block (无MLP时) 的输出是 y_t (Mixer输出)
             # Residual 传递的是累加后的值
             current_hidden = y_t
-            
-            # 如果有 MLP (通常 Mamba2 只有 Mixer，但为了兼容性)
             if blk.mlp is not None:
                 current_residual = current_residual + current_hidden
                 r2 = blk.norm2(current_residual.to(dtype=blk.norm2.weight.dtype))
                 current_hidden = blk.mlp(r2)
 
         # 5. Projection
-        # 输出层通常接在最后的 Residual 上，或者是 Mixer 的输出？
-        # 标准 Mamba 实现中，最后输出通常是 residual 或者是 norm(residual)
-        # 但根据你之前的训练代码 `x, residual = blk(x, residual)`
-        # 以及 `out = self.out_proj(x)`
-        # 训练时的 x 对应这里的 current_hidden (即最后一层的 Mixer 输出)
-        
         action_flat = self.out_proj(current_hidden) 
         action_t = action_flat.view(B, self.future_steps, self.action_dim)
         
