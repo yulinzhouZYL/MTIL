@@ -3,7 +3,7 @@ import sys
 import torch
 import torch.nn as nn
 import numpy as np
-from M_dataset_par2 import get_image_transform # 导入归一化函数
+from M_dataset_par import get_image_transform # 导入归一化函数
 
 from scaler_M import Scaler
 from mamba_policy_par_SB_IMLE import MambaPolicy, MambaConfig
