@@ -5,8 +5,8 @@ import torch.nn as nn
 import numpy as np
 from M_dataset_par import get_image_transform # 导入归一化函数
 
-from scaler_M import Scaler
-from mamba_policy_par_SB_IMLE import MambaPolicy, MambaConfig
+from train.scaler_M import Scaler
+from mamba_policy_par import MambaPolicy, MambaConfig
 
 class MyInferenceModel(nn.Module):
     """
