@@ -649,7 +649,13 @@ class MambaPolicy(nn.Module):
 
     def step(self, lowdim_t, images_t, hidden_states):
         """
-        修正后的单步推理函数：严格对齐 Mamba Block 的残差逻辑
+        # LEGACY / NON-CANONICAL IMPLEMENTATION
+        # This step() implementation is intentionally preserved to reproduce the results
+        # reported in the original RA-L paper. Do not mix it with checkpoints trained
+        # using train_par.py: such checkpoints must be deployed with the canonical
+        # parallel step(), while checkpoints trained with this legacy implementation
+        # must not be deployed with the parallel step().
+        # Training and inference must use the same implementation.
         """
         B = lowdim_t.shape[0]
         device = lowdim_t.device
