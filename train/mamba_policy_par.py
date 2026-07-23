@@ -528,8 +528,10 @@ class MambaPolicy(nn.Module):
         block_cfg=None,  # Block 的配置
         mamba_cfg=None,  # Mamba2 的配置
         future_steps=16,  # 预测未来16步，可调
+        use_backbone=True, # <--- [修改] 增加开关，默认为 True (兼容推理),  
     ):
         super().__init__()
+        self.use_backbone = use_backbone
         self.camera_names = camera_names
         self.future_steps = future_steps
         self.img_size = img_size
@@ -543,7 +545,14 @@ class MambaPolicy(nn.Module):
             mamba_cfg = MambaConfig()
         self.mamba_cfg = mamba_cfg
         # 初始化DINOv2特征提取器
-        self.shared_backbone = FrozenDinov2(layer_index=-4)
+        # <--- [MODIFIED] START
+        # 1. Backbone 处理
+        if self.use_backbone:
+            # 推理时，或者在线训练时使用
+            self.shared_backbone = FrozenDinov2(layer_index=-4)
+        else:
+            # 离线训练时，完全不需要 Backbone 对象
+            self.shared_backbone = None
 
         # 添加空间压缩层（保持合理分辨率）
         self.spatial_adapter = nn.Sequential(
@@ -640,85 +649,89 @@ class MambaPolicy(nn.Module):
 
     def step(self, lowdim_t, images_t, hidden_states):
         """
-        单帧前向:
-          lowdim_t: [B, lowdim_dim]
-          images_t: dict of [B, 3, H, W] => 单帧输入
-          hidden_states: list of (conv_st, ssm_st) per block，每个 Block 的隐藏状态
-        返回:
-          pred_action: [B, action_dim]
-          new_hidden_states: List[Tensor]
+        # LEGACY / NON-CANONICAL IMPLEMENTATION
+        # This step() implementation is intentionally preserved to reproduce the results
+        # reported in the original RA-L paper. Do not mix it with checkpoints trained
+        # using train_par.py: such checkpoints must be deployed with the canonical
+        # parallel step(), while checkpoints trained with this legacy implementation
+        # must not be deployed with the parallel step().
+        # Training and inference must use the same implementation.
         """
-        B, _ = lowdim_t.shape
+        B = lowdim_t.shape[0]
         device = lowdim_t.device
 
-        # 1. 多相机特征提取
-
+        # 1. 视觉特征提取 (Vision Encoder)
         feats_all = []
         for cam in self.camera_names:
-            img = images_t[cam]
-            raw_feat = self.shared_backbone(img)  # [B, 1024, H_patch, W_patch]
-            # 空间压缩与通道调整
-            if self.img_size == (640, 480):
-                feat = self.spatial_adapter(raw_feat)  # [B, 128*11*8]
-            elif self.img_size == (128, 128):
-                feat = self.spatial_adapter_low(raw_feat) # [B, 128*8*8]
+            img = images_t[cam] # [B, 3, H, W]
+            with torch.no_grad():
+                dino_out = self.shared_backbone(img) 
+            feat = self.process_vision_chunk(dino_out)
             feats_all.append(feat)
 
-        cam_feats = torch.cat(feats_all, dim=1)
-        # 跨相机注意力
-        if self.num_cameras > 1:
-            cam_feats = self.cross_cam_attn(cam_feats.unsqueeze(1),
-                                            cam_feats.unsqueeze(1), cam_feats.unsqueeze(1)).squeeze(1)
+        if len(feats_all) > 0:
+            cam_feats = torch.cat(feats_all, dim=1)
+        else:
+            cam_feats = torch.zeros(B, self.embed_dim, device=device)
 
-        # 2. 特征融合与投影
-        lowdim_feat = lowdim_t.unsqueeze(1)  # [B, 1, 14]
-        # 投影到d_model并交叉注意力
-        cam_feats_proj = self.in_proj(cam_feats)  # [B, d_model]
-        fused_feat = self.cross_attn(
-            query=cam_feats_proj.unsqueeze(1),
-            key=lowdim_feat,
-            value=lowdim_feat
-        ).squeeze(1)
-        x_t = fused_feat # [B, d_model]
+        # 2. Cross Camera Attention
+        if self.num_cameras > 1 and hasattr(self, 'cross_cam_attn'):
+            inp = cam_feats.unsqueeze(0) 
+            out = self.cross_cam_attn(inp, inp, inp)
+            cam_feats = out.squeeze(0)
 
-        # 3) 经过 blocks (单步)
-        residual = None
+        # 3. Modal Fusion
+        cam_feats_proj = self.in_proj(cam_feats)
+        q = cam_feats_proj.unsqueeze(0)
+        k = lowdim_t.unsqueeze(0)
+        x_t = self.cross_attn(query=q, key=k, value=k).squeeze(0) # [B, d_model]
+
+        # 4. Mamba Step 
         new_states = []
-        hidden = x_t
+        
+        # 逻辑说明：
+        # Mamba Block 的标准前向是：
+        # residual = (hidden + residual) [Pre-Norm]
+        # hidden = mixer(norm(residual))
+        # return hidden, residual
+        # 下一层的输入 hidden 是这一层的 mixer 输出；residual 是这一层的累加结果。
+        
+        current_hidden = x_t
+        current_residual = None
+
         for i, blk in enumerate(self.blocks):
-            conv_st, ssm_st = hidden_states[i] if i < len(hidden_states) else (None, None)
-            if residual is None:
-                residual = hidden
+            conv_st, ssm_st = hidden_states[i]
+            if current_residual is None:
+                current_residual = current_hidden
             else:
-                residual = residual + hidden
+                current_residual = current_residual + current_hidden
 
-            hidden_ln = blk.norm(residual.to(dtype=blk.norm.weight.dtype))
+            # Norm
+            hidden_ln = blk.norm(current_residual.to(dtype=blk.norm.weight.dtype))
 
-            # => step
-            # we need: out, new_conv, new_ssm = blk.mixer.step(...)
+            # Mixer Step
             if hasattr(blk.mixer, "step"):
-                y_t, new_conv_st, new_ssm_st = blk.mixer.step(hidden_ln.unsqueeze(1), conv_st, ssm_st)
-                y_t = y_t.squeeze(1)   # => (B, d_model)
-            else:
-                # fallback
-                y_t = blk.mixer(hidden_ln.unsqueeze(1))
+                y_t, new_conv_st, new_ssm_st = blk.mixer.step(
+                    hidden_ln.unsqueeze(1), conv_st, ssm_st
+                )
                 y_t = y_t.squeeze(1)
+            else:
+                y_t = blk.mixer(hidden_ln.unsqueeze(1)).squeeze(1)
                 new_conv_st, new_ssm_st = conv_st, ssm_st
-
-            hidden_out = y_t + residual
-
-            # mlp
-            if blk.mlp is not None:
-                r2 = blk.norm2(hidden_out.to(dtype=blk.norm2.weight.dtype))
-                hidden_out = blk.mlp(r2) + hidden_out
-
+            
             new_states.append((new_conv_st, new_ssm_st))
-            hidden = hidden_out
-            residual = hidden_out
+            # Mamba Block (无MLP时) 的输出是 y_t (Mixer输出)
+            # Residual 传递的是累加后的值
+            current_hidden = y_t
+            if blk.mlp is not None:
+                current_residual = current_residual + current_hidden
+                r2 = blk.norm2(current_residual.to(dtype=blk.norm2.weight.dtype))
+                current_hidden = blk.mlp(r2)
 
-            # d) out => action
-        action_flat = self.out_proj(hidden)# => [B, 16×14=224]
-        action_t = action_flat.view(-1, self.future_steps, 14)  # => [B,16,14]
+        # 5. Projection
+        action_flat = self.out_proj(current_hidden) 
+        action_t = action_flat.view(B, self.future_steps, self.action_dim)
+        
         return action_t, new_states
 
     def process_vision_chunk(self, dino_feats):
