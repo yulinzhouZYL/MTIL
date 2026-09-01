@@ -5,12 +5,12 @@ import h5py
 from torch.utils.data import Dataset, DataLoader
 from typing import Dict, List, Optional
 from tqdm import tqdm
-# 确保目录里有 scaler_M.py 且内容是你发给我的那个
+# 确保目录里有 scaler_M.py
 from scaler_M import Scaler 
 import cv2
 from torchvision import transforms
-cv2.setNumThreads(0)  # <--- 关键！防止 OpenCV 在 Worker 进程中乱开线程导致死锁或崩溃
-cv2.ocl.setUseOpenCL(False) # 禁止 OpenCL，防止显存冲突
+cv2.setNumThreads(0)  
+cv2.ocl.setUseOpenCL(False) 
 
 # === 公共归一化逻辑 (必须与 DINOv2 预训练保持一致) ===
 def get_image_transform(resize_hw=(640, 480)):
